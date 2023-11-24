@@ -1,38 +1,33 @@
-
+#include <math.h>
 #include <Servo.h>
 //setting servo pins and object
 const int servo_pin[4][3] = {{13,2,3},{4,5,6},{7,8,9},{10,11,12}};
 //servo pinsa are in the order {tibia,femur,pivot}  {L,R,L,R}  30 :{ restrict,extends,restrics,extends}
+
+double calc_angles[3];
 Servo servo[4][3];
 
 
 //measurements in millimeters
-const int tibia_length = 77.1;
-const int femur_length = 50;
-const int pivot_length = 27.5;
+const double tibia_length = 77.1;
+const double femur_length = 50;       
+const double pivot_length = 27.5;
 
 //set resting heights
-const int z = 10;
+const int z = 15;
 
 void setup() {
   //first let us setup the servos
  // servo_setup();
- servo[1][0].attach(servo_pin[3][0]);
+  Serial.begin(9600);
 
+  
 }
 
 void loop() {
-  //let us first make it stand
-  //for(int i = 30;i<=120;i++)
-  //{servo[0][0].write(i);delay(10);}
-  
-  for(int i = 30;i<150;i++)
+  for(int i = 0;i<3;i++)
   {
-  servo[1][0].write(i);delay(10);
-  }
-  for(int i = 150;i>30;i--)
-  {
-  servo[1][0].write(i);delay(10);
+    Serial.println(calc_angles[0]);
   }
 }
 //requires additional powersupply
@@ -48,4 +43,21 @@ void servo_setup()
     }
   }
 }
+
+void ik_angles(double posx,double posy, double posz)
+{
+  double l = sqrt(posx*posx+posy*posy)-pivot_lenngth;
+  calc_angles[0] =  acos((pow(tibia_length,2.0)+pow(femur_length,2.0)-pow(l,2.0))/(2*tibia_length*femur_length));
+  calc_angles[1] = acos((pow(femur_legnth,2.0)+pow(l,2.0)-pow(tibia_length,2.0))/(2*l*femur_length))+atan(l/posz);
+  calc_angles[2] = atan(posy/posx);
+  toDegree();
+
+}
+void toDegree()
+{
+  calc_angles[0] = RAD_TO_DEG*calc_angles[0];
+  calc_angles[1] = RAD_TO_DEG*calc_angles[1];
+  calc_angles[2] = RAD_TO_DEG*calc_angles[2];
+}
+
 
