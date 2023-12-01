@@ -1,3 +1,12 @@
+/*
++----------------------------------------------------------------------------------------------------+
+|                                              STATUS                                                |
++----------------------------------------------------------------------------------------------------+
+| + the ik method calculates angles for servos to get to that position                               |
+| + robot can stand up                                                                               |
+| + Currently programming the leg movement algorithm to move from one postion to the other           |
++----------------------------------------------------------------------------------------------------+
+*/
 #include <math.h>
 #include <Servo.h>
 //setting servo pins and object
@@ -14,7 +23,9 @@ const double femur_length = 50;
 const double pivot_length = 27.5;
 
 //set resting heights
-const int z = 45;
+const int z = 45;//effective height for this is 10mm
+
+const int z_offsets[4] = {20,0,0,15};//the error offsets for each leg
 
 //array to maintain current positons
 int x = 60;
@@ -29,7 +40,7 @@ void setup() {
   servo_setup();
   
   Serial.begin(9600);//for debugging
-  for(int i = 0;i<z;i++)
+  for(int i = 0;i<z;i++)//check if it is working properly
   {
     initialize_start(i);
   }
@@ -43,7 +54,8 @@ void loop()
 
 }
 
-//attach all servos
+//attach all servos testing done works fine most of the time
+//sometimes bugs servo goes to the opposite side
 void servo_setup()
 {
   for(int i = 0;i<4;i++)
@@ -132,6 +144,33 @@ void ik_angles(double posx,double posy, double posz)
   }
 
 }
+void move_leg_with_lifting(int leg_no,int desired_pos[])//requires testing
+{
+  float lift_angle = 30.0;
+  if(leg_no%2 != 0)
+  {
+    lift_angle = 180- lift_angle;
+  }
+  drive_servo(servo[leg_no][1],curr_angle[leg_no][1],curr_angle[leg_no][1]+=lift_angle);
+  
+  ik_angles(desired_pos[0],desired_pos[1],desired_pos[2]);
+  if(leg_no%2 == 0)
+  {
+    calc_angles[0] = 180-calc_angles[0];
+    calc_angles[2] = 180-calc_angles[2];
+  }
+  else
+  {
+    calc_angles[1] = 180-calc_angles[1];
+  }
+  drive_servo(servo[leg_no][2],curr_angle[leg_no][2],calc_angles[2]);
+  drive_sero(servo[leg_no][0],curr_angle[leg_no][0],calc_angles[0]);
+  drive_sero(servo[leg_no][1],curr_angle[leg_no][1],calc_angles[1]);
+  setAngle(leg_no,calc_angles);
+}
+void move_leg_without_lifting(int leg_no, int desired_pos[])
+{
+}
 void toDegree()
 {
   calc_angles[0] = RAD_TO_DEG*calc_angles[0];
@@ -144,10 +183,4 @@ void setAngle(int index, float angles[])
   curr_angle[index][0] = angles[0];
   curr_angle[index][1] = angles[1];
   curr_angle[index][2] = angles[2]];
-}
-void move_leg_with_lifting(int leg_no,int desired_pos[])
-{
-}
-void move_leg_without_lifting(int leg_no, int desired_pos[])
-{
 }
